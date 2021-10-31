@@ -1,5 +1,6 @@
 from enum import Enum as EnumType
 
+
 class TransmitterType(EnumType):
     NONE = 0
     m = 1
