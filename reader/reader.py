@@ -1,10 +1,10 @@
-from models.transmitter import Transmitter
+from models import Transmitter
 
 
 class Reader:
     transmitter_list: list[Transmitter] = []
 
-    def __init__(self, source):
+    def __init__(self, source=None, country: str = None):
         pass
 
     def import_data(self, source):

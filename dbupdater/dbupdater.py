@@ -6,8 +6,9 @@ from json import dumps
 
 class DBUpdater:
     def __init__(self, endpoint: str):
+        self.endpoint = endpoint
         self.transmitter_list = []
-        self.country_list = []
+        self.country_list = {}
         try:
             req.get(endpoint)
             self.endpoint = endpoint
@@ -33,8 +34,10 @@ class DBUpdater:
             input("dalej?")
 
     def download_countries(self):
-        pass
-
+        response = req.get(self.endpoint + "/countries/")
+        for country in response.json():
+            self.country_list.update({country["country_code"]: country["is_enabled"]})
+        print(self.country_list)
 
     def __convert_transmitter_obj_to_json(self, obj):
         return dumps(obj.__dict__)
