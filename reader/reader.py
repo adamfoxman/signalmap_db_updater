@@ -1,8 +1,11 @@
 from models.transmitter import Transmitter
 
 
-class Reader(type):
+class Reader:
     transmitter_list: list[Transmitter] = []
+
+    def __init__(self, source):
+        pass
 
     def import_data(self, source):
         pass

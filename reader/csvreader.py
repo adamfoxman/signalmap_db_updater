@@ -1,16 +1,14 @@
 import csv
 
-import row as row
-
 from models.transmitter import Transmitter
 from reader.reader import Reader
 
 
 class CSVReader(Reader):
-    def __init__(self, filename: str = None):
-        super().__init__()
-        if filename is not None:
-            self.import_data(filename)
+    def __init__(self, source: str = None):
+        super().__init__(source)
+        if source is not None:
+            self.import_data(source)
 
     # Imports data from CSV
     def import_data(self, source: str):
@@ -37,7 +35,7 @@ class CSVReader(Reader):
                             precision=int(line['precision']),
                             height=int(line['height']),
                             station=line['station'],
-                            country_id="pl"
+                            country_id="PL"
                         ))
             except IOError:
                 raise Exception("Provided file does not exist or is not valid")
