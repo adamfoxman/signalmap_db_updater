@@ -1,4 +1,5 @@
 import csv
+import urllib
 
 from models.transmitter import Transmitter
 from reader.reader import Reader

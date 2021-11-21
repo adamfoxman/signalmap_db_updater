@@ -7,8 +7,5 @@ class Reader:
     def __init__(self, source=None, country: str = None):
         pass
 
-    def import_data(self, source):
-        pass
-
     def get_transmitter_list(self):
         return self.transmitter_list

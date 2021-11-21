@@ -31,13 +31,6 @@ class DBUpdater:
                 print("ODPOWIEDŻ: " + str(res.text))
             else:
                 print("Już istnieje.")
-            input("dalej?")
-
-    def download_countries(self):
-        response = req.get(self.endpoint + "/countries/")
-        for country in response.json():
-            self.country_list.update({country["country_code"]: country["is_enabled"]})
-        print(self.country_list)
 
     def __convert_transmitter_obj_to_json(self, obj):
         return dumps(obj.__dict__)

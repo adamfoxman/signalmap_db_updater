@@ -4,23 +4,19 @@ from enum import Enum as EnumType
 class Transmitter:
     external_id: int = None
     frequency: float = None
-    # mode: TransmitterType = TransmitterType.NONE
     mode: str = None
     erp: float = 1
     antenna_height: int = 100
-    # antenna_pattern: RadiationPattern = RadiationPattern.NONE
     antenna_pattern: str = None
     antenna_direction: int = None
     pattern_h: str = None
     pattern_v: str = None
-    # polarisation: Polarisation = Polarisation.NONE
     polarisation: str = None
     location: str = None
     region: str = None
     country_id: str = None
     latitude: float = None
     longitude: float = None
-    # precision: Precision = Precision.NONE
     precision: int = None
     height: int = None
     station: str = None
@@ -48,7 +44,6 @@ class Transmitter:
         self.frequency = frequency
         self.erp = erp
         self.antenna_height = antenna_height
-        # self.antenna_direction = antenna_direction
         self.location = location
         self.region = region
         self.country_id = country_id
@@ -71,3 +66,25 @@ class Transmitter:
         self.antenna_pattern = antenna_pattern
         self.polarisation = polarisation
         self.precision = precision
+
+    def __str__(self):
+        return "Transmitter(external_id={}, frequency={}, mode={}, erp={}, antenna_height={}, antenna_pattern={}, antenna_direction={}, polarisation={}, location={}, region={}, country_id={}, latitude={}, longitude={}, precision={}, height={}, station={}, pattern_h={}, pattern_v={})".format(
+            self.external_id,
+            self.frequency,
+            self.mode,
+            self.erp,
+            self.antenna_height,
+            self.antenna_pattern,
+            self.antenna_direction,
+            self.polarisation,
+            self.location,
+            self.region,
+            self.country_id,
+            self.latitude,
+            self.longitude,
+            self.precision,
+            self.height,
+            self.station,
+            self.pattern_h,
+            self.pattern_v
+        )
