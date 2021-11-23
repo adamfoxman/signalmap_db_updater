@@ -1,6 +1,3 @@
-from enum import Enum as EnumType
-
-
 class Transmitter:
     external_id: int = None
     frequency: float = None
@@ -68,23 +65,9 @@ class Transmitter:
         self.precision = precision
 
     def __str__(self):
-        return "Transmitter(external_id={}, frequency={}, mode={}, erp={}, antenna_height={}, antenna_pattern={}, antenna_direction={}, polarisation={}, location={}, region={}, country_id={}, latitude={}, longitude={}, precision={}, height={}, station={}, pattern_h={}, pattern_v={})".format(
-            self.external_id,
-            self.frequency,
-            self.mode,
-            self.erp,
-            self.antenna_height,
-            self.antenna_pattern,
-            self.antenna_direction,
-            self.polarisation,
-            self.location,
-            self.region,
-            self.country_id,
-            self.latitude,
-            self.longitude,
-            self.precision,
-            self.height,
-            self.station,
-            self.pattern_h,
-            self.pattern_v
-        )
+        return f"Transmitter(external_id={self.external_id}, frequency={self.frequency}, mode={self.mode}, erp={self.erp}," \
+               f" antenna_height={self.antenna_height}, antenna_pattern={self.antenna_pattern}, " \
+               f"antenna_direction={self.antenna_direction}, polarisation={self.polarisation}, " \
+               f"location={self.location}, region={self.region}, country_id={self.country_id}, " \
+               f"latitude={self.latitude}, longitude={self.longitude}, precision={self.precision}, " \
+               f"height={self.height}, station={self.station}, pattern_h={self.pattern_h}, pattern_v={self.pattern_v}) "
