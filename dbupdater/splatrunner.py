@@ -28,6 +28,8 @@ def run_simulation(path: str,
 
     erp_watts = ceil(erp * 1000)
 
+    get_signal_color_file(location_filepath, transmitter_type)
+
     splat_command = f'{os.getenv("SPLAT_PATH")}splat -t {location_filename} -erp {erp_watts} -L {receiver_height} -R 50 -gc 10.0 -db 34 -d {os.getenv("SRTM_PATH")} -metric -olditm -ngs -kml -N -o {location_filepath}.ppm'
     try:
         subprocess.run(splat_command, shell=True)
@@ -64,10 +66,23 @@ def replace_in_file(file_path: str, find: str, replace: str):
 
 def get_signal_color_file(filepath: str, transmitter_type: str) -> str:
     if transmitter_type == 'f':
-        pass
+        file_r = open("f.scf", 'r')
     elif transmitter_type == 'd':
-        pass
+        file_r = open("d.scf", 'r')
     elif transmitter_type == 't':
-        pass
+        file_r = open("t.scf", 'r')
     else:
-        return "invalid"
+        raise Exception("Invalid transmitter type")
+
+    try:
+        filedata = file_r.read()
+        with open(filepath, 'w') as file_w:
+            file_w.write(filedata)
+            file_w.close()
+        file_r.close()
+    except Exception as e:
+        print(e)
+        raise Exception("Could not write signal color file")
+
+    return filepath
+
