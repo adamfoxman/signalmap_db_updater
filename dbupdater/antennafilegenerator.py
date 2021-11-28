@@ -3,15 +3,27 @@ from math import ceil, sqrt
 
 
 def get_antenna_file(path: str,
-                     id: int,
-                     type: str,
+                     external_id: int,
+                     transmitter_type: str,
                      country: str,
                      antenna_direction: str,
                      pattern_h: str,
                      pattern_v: str):
+    """
+    Generates the antenna file for the given parameters.
+
+    :param path: The path to the location file.
+    :param external_id: The external id of a transmitter.
+    :param transmitter_type: The type of the transmitter.
+    :param country: The country of the location.
+    :param antenna_direction: Information about the antenna direction.
+    :param pattern_h: Horizontal pattern of an antenna.
+    :param pattern_v: Vertical pattern of an antenna.
+    :return: The antenna filename as a string.
+    """
     if path[-1] != "/":
         path += "/"
-    antenna_filename = f"{path}{country}_{type}_{id}.az"
+    antenna_filename = f"{path}{country}_{transmitter_type}_{external_id}.az"
     with open(antenna_filename, "w") as antenna_file:
         antenna_file = open(antenna_filename, "w+")
         pattern = []
@@ -61,5 +73,4 @@ def split_string_to_list(pattern):
         for line, string in enumerate(pattern):
             pattern[line] = float(string)
         max_value = max(pattern)
-        print(pattern)
         return max_value, pattern

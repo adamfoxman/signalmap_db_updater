@@ -27,11 +27,12 @@ class ExternalReader(Reader):
                 for line in reader:
                     print(line)
                     transmitter = Transmitter(
+                        band=line["band"],
                         external_id=int(line['id']),
                         frequency=float(line['frequency']),
                         mode=line['mode'],
-                        erp=float(line['erp']),
-                        antenna_height=int(line['ant']),
+                        erp=line['erp'],
+                        antenna_height=line['ant'],
                         antenna_direction=line['dirdeg'],
                         antenna_pattern=line['dir'],
                         pattern_h=line['pattern_h'],
@@ -41,8 +42,8 @@ class ExternalReader(Reader):
                         region=line['reg'],
                         latitude=float(line['latitude']),
                         longitude=float(line['longitude']),
-                        precision=int(line['precision']),
-                        height=int(line['height']),
+                        precision=line['precision'],
+                        height=line['height'],
                         station=line['station'],
                         country_id=country
                     )
