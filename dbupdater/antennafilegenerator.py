@@ -3,9 +3,7 @@ from math import ceil, sqrt
 
 
 def get_antenna_file(path: str,
-                     external_id: int,
-                     transmitter_type: str,
-                     country: str,
+                     antenna_filename: str,
                      antenna_direction: str,
                      pattern_h: str,
                      pattern_v: str):
@@ -23,7 +21,6 @@ def get_antenna_file(path: str,
     """
     if path[-1] != "/":
         path += "/"
-    antenna_filename = f"{path}{country}_{transmitter_type}_{external_id}.az"
     with open(antenna_filename, "w") as antenna_file:
         antenna_file = open(antenna_filename, "w+")
         pattern = []

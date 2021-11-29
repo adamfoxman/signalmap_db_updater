@@ -5,7 +5,7 @@ from json import dumps
 from .antennafilegenerator import get_antenna_file
 from .locationfilegenerator import get_location_file
 from models import Transmitter
-from .splatrunner import run_simulation
+from .splatrunner import run_simulation, encode_file, load_kml_file
 
 
 class DBUpdater:
@@ -29,9 +29,14 @@ class DBUpdater:
             response = req.get(f"http://localhost/api/v1/transmitters/get/external/?external_id={str(unit.external_id)}")
             print("ZAPYTANIE:" + str(response) + " " + str(response.text))
             if response.text == "null":
-                get_antenna_file("./", unit.external_id, unit.band, unit.country_id, unit.antenna_direction, unit.pattern_h, unit.pattern_v)
-                get_location_file("./", unit.external_id, unit.band, unit.country_id, unit.station, unit.latitude, unit.longitude, unit.antenna_height)
-                run_simulation("./", unit.external_id, unit.band, unit.country_id, float(unit.erp))
+                location_filename = f"{unit.country}_{unit.transmitter_type}_{unit.external_id}"
+                get_antenna_file("./", location_filename, unit.antenna_direction, unit.pattern_h, unit.pattern_v)
+                get_location_file("./", location_filename, unit.station, unit.latitude, unit.longitude, unit.antenna_height)
+                run_simulation("./", location_filename, unit.band, float(unit.erp))
+                encoded_image = encode_file(f"./{location_filename}.png")
+                kml_file = load_kml_file(f"./{location_filename}.kml")
+                unit.set_kml_file(kml_file)
+                unit.set_image(encoded_image)
                 json_transmitter = self.__convert_transmitter_obj_to_json(unit)
                 print("to co wysylamy:" + str(json_transmitter))
                 # res = req.post("http://localhost/api/v1/transmitters/create/", json_transmitter)

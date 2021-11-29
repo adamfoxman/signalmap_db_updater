@@ -1,42 +1,25 @@
 def get_location_file(path: str,
-                      external_id: int,
-                      transmitter_type: str,
-                      country: str,
+                      location_filename: str,
                       station_name: str,
                       latitude: float,
                       longitude: float,
                       elevation: int,
                       ) -> str:
     """
-    Generates a location file for the database.
+    Generates a location file for the given parameters.
 
-    Parameters
-    ----------
-    path : str
-        The path to the location file.
-    external_id : int
-        The external id of a transmitter.
-    transmitter_type : str
-        The type of the transmitter.
-    country : str
-        The country of the location.
-    station_name : str
-        The name of the station.
-    latitude : float
-        The latitude of the location.
-    longitude : float
-        The longitude of the location.
-    elevation : int
-        The elevation of the location.
-
-    Returns
-    -------
-    str
-        The location filename .
+    :param path: Path for a file in a filesystem.
+    :param external_id: External ID of the transmitter.
+    :param transmitter_type: Type of the transmitter (FM/DAB/TV).
+    :param country: ISO country code.
+    :param station_name: Transmitted station name.
+    :param latitude: Latitude location of the transmitter.
+    :param longitude: Longitude location of the transmitter.
+    :param elevation: Elevation of an antenna above the ground.
+    :return: Filename for a generated file.
     """
     if path[-1] != '/':
         path += '/'
-    location_filename = f"{country}_{transmitter_type}_{external_id}.qth"
     location_path = f"{path}{location_filename}"
     try:
         with open(location_path, 'w+') as location_file:

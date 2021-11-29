@@ -18,6 +18,8 @@ class Transmitter:
     precision: int = 3
     height: int = None
     station: str = None
+    kml_file: str = None
+    coverage: str = None
 
     def __init__(self,
                  band: str,
@@ -101,3 +103,24 @@ class Transmitter:
         else:
             type_of_transmitter = 'Unknown'
         return f"{type_of_transmitter} Transmitter(external_id={self.external_id}, frequency={self.frequency}, mode={self.mode}, erp={self.erp}, antenna_height={self.antenna_height}, antenna_pattern={self.antenna_pattern}, antenna_direction={self.antenna_direction}, polarisation={self.polarisation}, location={self.location}, region={self.region}, country_id={self.country_id}, latitude={self.latitude}, longitude={self.longitude}, precision={self.precision}, height={self.height}, station={self.station}, pattern_h={self.pattern_h}, pattern_v={self.pattern_v}) "
+
+    def set_kml_file(self, kml_file: str):
+        """
+        Sets the KML file of the transmitter.
+
+        :param kml_file: The KML file of the transmitter as a string.
+
+        :returns: Nothing.
+        """
+        if kml_file is not None and kml_file != '' and isinstance(kml_file, str):
+            self.kml_file = kml_file
+
+    def set_coverage(self, coverage: str):
+        """
+        Sets the coverage of the transmitter.
+
+        :param coverage: The coverage of the transmitter as a string.
+        :returns: Nothing.
+        """
+        if coverage is not None and coverage != '' and isinstance(coverage, str):
+            self.coverage = coverage

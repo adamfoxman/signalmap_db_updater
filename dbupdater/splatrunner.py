@@ -1,15 +1,25 @@
 import os
+import base64
 from math import ceil
 
 from wand.image import Image
 from wand.color import Color
 import subprocess
 
+
 def run_simulation(path: str,
-                   external_id: int,
+                   location_filename: str,
                    transmitter_type: str,
-                   country: str,
                    erp: float) -> str:
+    """
+    Run a simulation with the given parameters
+
+    :param path: Path of a file in a filesystem.
+    :param location_filename: Filename for the coverage files.
+    :param transmitter_type: Type of a transmitter (FM/DAB/TV)
+    :param erp: ERP power of a transmitter
+    :return:
+    """
     if transmitter_type == 't':
         receiver_height = 10
         db_threshold = 48
@@ -23,14 +33,16 @@ def run_simulation(path: str,
         receiver_height = 10
         db_threshold = 48
 
-    location_filename = f"{country}_{transmitter_type}_{external_id}"
     location_filepath = f"{path}{location_filename}"
 
     erp_watts = ceil(erp * 1000)
 
-    get_signal_color_file(location_filepath, transmitter_type)
+    try:
+        get_signal_color_file(location_filepath, transmitter_type)
+    except Exception as e:
+        print(e)
 
-    splat_command = f'{os.getenv("SPLAT_PATH")}splat -t {location_filename} -erp {erp_watts} -L {receiver_height} -R 50 -gc 10.0 -db 34 -d {os.getenv("SRTM_PATH")} -metric -olditm -ngs -kml -N -o {location_filepath}.ppm'
+    splat_command = f'{os.getenv("SPLAT_PATH")}splat -t {location_filename} -erp {erp_watts} -L {receiver_height} -R 50 -gc 10.0 -db {db_threshold} -d {os.getenv("SRTM_PATH")} -metric -olditm -ngs -kml -N -o {location_filepath}.ppm'
     try:
         subprocess.run(splat_command, shell=True)
     except subprocess.CalledProcessError as e:
@@ -64,6 +76,7 @@ def replace_in_file(file_path: str, find: str, replace: str):
         print(e)
 
 
+# save .scf file for a particular transmitter
 def get_signal_color_file(filepath: str, transmitter_type: str) -> str:
     if transmitter_type == 'f':
         file_r = open("f.scf", 'r')
@@ -86,3 +99,19 @@ def get_signal_color_file(filepath: str, transmitter_type: str) -> str:
 
     return filepath
 
+
+# encode file as base64 string
+def encode_file(file_path: str) -> str:
+    with open(file_path, 'rb') as file:
+        return base64.b64encode(file.read()).decode('utf-8')
+
+
+# load kml file as string
+def load_kml_file(file_path: str) -> str:
+    if not os.path.isfile(file_path):
+        raise Exception("File not found")
+    if not file_path.endswith(".kml"):
+        raise Exception("File is not a kml file")
+    else:
+        with open(file_path, 'r') as file:
+            return file.read()
