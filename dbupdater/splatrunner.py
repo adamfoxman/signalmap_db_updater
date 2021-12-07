@@ -7,6 +7,67 @@ from wand.color import Color
 import subprocess
 
 
+# Find and replace a phrase in a file
+def replace_in_file(file_path: str, find: str, replace: str):
+    """
+    Find and replace a phrase in a file
+
+    :param file_path: Path to a file in a filesystem.
+    :param find: Phrase to find in a file.
+    :param replace: Phrase to replace in a file.
+    :return: None
+    """
+    try:
+        with open(file_path, 'r') as file:
+            filedata = file.read()
+        filedata = filedata.replace(find, replace)
+        with open(file_path, 'w') as file:
+            file.write(filedata)
+    except Exception as e:
+        print(e)
+
+
+# save .scf file for a particular transmitter
+def get_signal_color_file(filepath: str, transmitter_type: str) -> str:
+    """
+    Save a .scf file for a particular transmitter
+
+    :param filepath: Path of a file in a filesystem.
+    :param transmitter_type: Type of a transmitter (FM/DAB/TV)
+    :return: Path to the .scf file.
+    """
+    if transmitter_type == 'f':
+        file_r = open("f.scf", 'r')
+    elif transmitter_type == 'd':
+        file_r = open("d.scf", 'r')
+    elif transmitter_type == 't':
+        file_r = open("t.scf", 'r')
+    else:
+        raise Exception("Invalid transmitter type")
+
+    try:
+        filedata = file_r.read()
+        with open(f"{filepath}.scf", 'w') as file_w:
+            file_w.write(filedata)
+            file_w.close()
+        file_r.close()
+    except Exception as e:
+        print(e)
+        raise Exception("Could not write signal color file")
+
+    return filepath
+
+
+def file_exists(file_path: str) -> bool:
+    """
+    Check if a file exists
+
+    :param file_path: Path to a file in a filesystem.
+    :return: Boolean value indicating if the file exists.
+    """
+    return os.path.isfile(file_path)
+
+
 def run_simulation(path: str,
                    location_filename: str,
                    transmitter_type: str,
@@ -18,7 +79,7 @@ def run_simulation(path: str,
     :param location_filename: Filename for the coverage files.
     :param transmitter_type: Type of a transmitter (FM/DAB/TV)
     :param erp: ERP power of a transmitter
-    :return:
+    :return: Path to the simulation output file.
     """
     if transmitter_type == 't':
         receiver_height = 10
@@ -47,7 +108,7 @@ def run_simulation(path: str,
     else:
         raise Exception("Files not found")
 
-    splat_command = f'{os.getenv("SPLAT_PATH")}splat -t {location_filename} -erp {erp_watts} -L {receiver_height} -R 100 -gc 10.0 -db {db_threshold} -d {os.getenv("SRTM_PATH")} -metric -olditm -ngs -kml -N -o {location_filepath}.ppm'
+    splat_command = f'{os.getenv("SPLAT_PATH")}splat -t {location_filename} -erp {erp_watts} -L {receiver_height} -R 200 -gc 10.0 -db {db_threshold} -d {os.getenv("SRTM_PATH")} -metric -olditm -ngs -kml -N -o {location_filepath}.ppm'
     try:
         subprocess.run(splat_command, shell=True)
     except subprocess.CalledProcessError as e:
@@ -69,59 +130,3 @@ def run_simulation(path: str,
     return f"{location_filename}.png"
 
 
-# Find and replace a phrase in a file
-def replace_in_file(file_path: str, find: str, replace: str):
-    try:
-        with open(file_path, 'r') as file:
-            filedata = file.read()
-        filedata = filedata.replace(find, replace)
-        with open(file_path, 'w') as file:
-            file.write(filedata)
-    except Exception as e:
-        print(e)
-
-
-# save .scf file for a particular transmitter
-def get_signal_color_file(filepath: str, transmitter_type: str) -> str:
-    if transmitter_type == 'f':
-        file_r = open("f.scf", 'r')
-    elif transmitter_type == 'd':
-        file_r = open("d.scf", 'r')
-    elif transmitter_type == 't':
-        file_r = open("t.scf", 'r')
-    else:
-        raise Exception("Invalid transmitter type")
-
-    try:
-        filedata = file_r.read()
-        with open(f"{filepath}.scf", 'w') as file_w:
-            file_w.write(filedata)
-            file_w.close()
-        file_r.close()
-    except Exception as e:
-        print(e)
-        raise Exception("Could not write signal color file")
-
-    return filepath
-
-
-# encode file as base64 string
-def encode_file(file_path: str) -> str:
-    with open(file_path, 'rb') as file:
-        return base64.b64encode(file.read()).decode('utf-8')
-
-
-# load kml file as string
-def load_kml_file(file_path: str) -> str:
-    if not os.path.isfile(file_path):
-        raise Exception("File not found")
-    if not file_path.endswith(".kml"):
-        raise Exception("File is not a kml file")
-    else:
-        with open(file_path, 'r') as file:
-            return file.read()
-
-
-# check if file exists
-def file_exists(file_path: str) -> bool:
-    return os.path.isfile(file_path)

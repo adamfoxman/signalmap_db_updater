@@ -7,27 +7,13 @@ from json import dumps
 from .antennafilegenerator import get_antenna_file
 from .locationfilegenerator import get_location_file
 from models import Transmitter
-from .splatrunner import run_simulation, encode_file, load_kml_file
-
-
-# uploads the coverage file to google cloud storage and returns the url
-def upload_to_gcloud_storage(bucket_name: str, file_name: str):
-    try:
-        storage_client = storage.Client.from_service_account_json(os.getenv("GCLOUD_JSON"))
-        bucket = storage_client.get_bucket(bucket_name)
-        blob = bucket.blob(file_name)
-        blob.upload_from_filename(file_name)
-        return f"https://storage.googleapis.com/{bucket_name}/{file_name}"
-    except Exception as e:
-        print(e)
-        return None
-
-
-def convert_transmitter_obj_to_json(obj):
-    return dumps(obj.__dict__)
+from .splatrunner import run_simulation
 
 
 class DBUpdater:
+    """
+    Class for updating the database with new data.
+    """
     def __init__(self, endpoint: str):
         self.endpoint = endpoint
         self.transmitter_list = []
@@ -39,10 +25,20 @@ class DBUpdater:
             print(f"URL %s is not available on the internet.", endpoint)
 
     def set_transmitter_list(self, tlist: list[Transmitter]):
+        """
+        Set the list of transmitters to be updated.
+        :param tlist: List of Transmitter objects.
+        :return: None.
+        """
         if isinstance(tlist, list):
             self.transmitter_list = tlist
 
     def update_database(self):
+        """
+        Update the database with new data.
+
+        :return: None.
+        """
         for unit in self.transmitter_list:
             sleep(0.2)
             response = req.get(f"{self.endpoint}/transmitters/get/external/?band={str(unit.band)}&external_id={str(unit.external_id)}")
@@ -70,6 +66,36 @@ class DBUpdater:
                 print("Już istnieje.")
 
 
+# uploads the coverage file to google cloud storage and returns the url
+def upload_to_gcloud_storage(bucket_name: str, file_name: str):
+    """
+    Uploads the coverage file to google cloud storage and returns the url.
+
+    :param bucket_name: Name of the bucket.
+    :param file_name: File name to be uploaded.
+    :return: URL of the uploaded file.
+    """
+    try:
+        storage_client = storage.Client.from_service_account_json(os.getenv("GCLOUD_JSON"))
+        bucket = storage_client.get_bucket(bucket_name)
+        blob = bucket.blob(file_name)
+        blob.upload_from_filename(file_name)
+        return f"https://storage.googleapis.com/{bucket_name}/{file_name}"
+    except Exception as e:
+        print(e)
+        return None
+
+
+def convert_transmitter_obj_to_json(obj):
+    """
+    Converts Transmitter object to json.
+
+    :param obj: Transmitter object.
+    :return: Json object.
+    """
+    return dumps(obj.__dict__)
+
+
 def delete_files(location_filename: str, station_name: str):
     delete_file(f"./{location_filename}.png")
     delete_file(f"./{location_filename}.ppm")
@@ -82,6 +108,12 @@ def delete_files(location_filename: str, station_name: str):
 
 
 def delete_file(file_name: str):
+    """
+    Deletes the file.
+
+    :param file_name: File name.
+    :return: None.
+    """
     try:
         os.remove(file_name)
     except FileNotFoundError:

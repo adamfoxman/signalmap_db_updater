@@ -12,13 +12,34 @@ from reader import Reader
 from models.transmitter import Transmitter
 
 
+def get_api_address(country_code: str):
+    """
+    Get the API address for the given country code.
+    :param country_code: 2-letter ISO country code.
+    :return: API address.
+    """
+    address = str(os.getenv("API_ADDRESS")) + "?iso=" + country_code + "&token=" + str(os.getenv("API_TOKEN"))
+    print(address)
+    return address
+
+
 class ExternalReader(Reader):
+    """
+    Reader class for external data sources.
+    """
     def __init__(self, endpoint: str = None):
         super().__init__()
         self.endpoint = endpoint
         self.country_list = {}
 
     def _import_country_data(self, source=None, country: str = None):
+        """
+        Import data from a CSV file.
+
+        :param source: Source data.
+        :param country: 2-letter ISO country code.
+        :return: None.
+        """
         if source is not None and country is not None:
             csv.field_size_limit(sys.maxsize)
             try:
@@ -51,12 +72,22 @@ class ExternalReader(Reader):
                 raise Exception("Provided source is not valid")
 
     def _download_countries(self):
+        """
+        Download the list of countries.
+
+        :return: None.
+        """
         response = req.get(self.endpoint + "/countries/")
         for country in response.json():
             if country["country_code"] is not None and country["country_code"] not in self.country_list:
                 self.country_list[country["country_code"]] = country["is_enabled"]
 
     def download_data(self):
+        """
+        Download data from external sources.
+
+        :return: None.
+        """
         if self.endpoint is None:
             raise Exception("Endpoint is not set")
         if len(self.transmitter_list) > 0:
@@ -67,20 +98,6 @@ class ExternalReader(Reader):
         for country in self.country_list:
             if self.country_list[country]:
                 headers = {'user-agent': 'SignalMap Updater 1.0'}
-                request = requests.get(self._get_api_address(country), headers=headers)
+                request = requests.get(get_api_address(country), headers=headers)
                 data = request.content.decode('utf-8').split('\r\n')
                 self._import_country_data(data, country)
-                # request = urllib.request.Request(
-                #     url=self._get_api_address(country),
-                #     data=None,
-                #     headers=headers
-                # )
-                #
-                # with urllib.request.urlopen(request) as url:
-                #     data = url.read()
-                #     self._import_country_data(source=data, country=country)
-
-    def _get_api_address(self, country_code: str):
-        address = str(os.getenv("API_ADDRESS")) + "?iso=" + country_code + "&token=" + str(os.getenv("API_TOKEN"))
-        print(address)
-        return address
