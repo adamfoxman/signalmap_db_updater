@@ -42,7 +42,12 @@ def run_simulation(path: str,
     except Exception as e:
         print(e)
 
-    splat_command = f'{os.getenv("SPLAT_PATH")}splat -t {location_filename} -erp {erp_watts} -L {receiver_height} -R 50 -gc 10.0 -db {db_threshold} -d {os.getenv("SRTM_PATH")} -metric -olditm -ngs -kml -N -o {location_filepath}.ppm'
+    if file_exists(f"{location_filepath}.qth") and file_exists(f"{location_filepath}.scf") and file_exists(f"{location_filepath}.az"):
+        print("Files found")
+    else:
+        raise Exception("Files not found")
+
+    splat_command = f'{os.getenv("SPLAT_PATH")}splat -t {location_filename} -erp {erp_watts} -L {receiver_height} -R 100 -gc 10.0 -db {db_threshold} -d {os.getenv("SRTM_PATH")} -metric -olditm -ngs -kml -N -o {location_filepath}.ppm'
     try:
         subprocess.run(splat_command, shell=True)
     except subprocess.CalledProcessError as e:
@@ -89,7 +94,7 @@ def get_signal_color_file(filepath: str, transmitter_type: str) -> str:
 
     try:
         filedata = file_r.read()
-        with open(filepath, 'w') as file_w:
+        with open(f"{filepath}.scf", 'w') as file_w:
             file_w.write(filedata)
             file_w.close()
         file_r.close()
@@ -115,3 +120,8 @@ def load_kml_file(file_path: str) -> str:
     else:
         with open(file_path, 'r') as file:
             return file.read()
+
+
+# check if file exists
+def file_exists(file_path: str) -> bool:
+    return os.path.isfile(file_path)

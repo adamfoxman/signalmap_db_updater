@@ -21,8 +21,7 @@ def get_antenna_file(path: str,
     """
     if path[-1] != "/":
         path += "/"
-    with open(antenna_filename, "w") as antenna_file:
-        antenna_file = open(antenna_filename, "w+")
+    with open(f"{antenna_filename}.az", "w+") as antenna_file:
         pattern = []
 
         if pattern_h == "" and pattern_v == "" and antenna_direction != "":

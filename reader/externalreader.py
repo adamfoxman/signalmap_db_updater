@@ -13,9 +13,8 @@ from models.transmitter import Transmitter
 
 
 class ExternalReader(Reader):
-    def __init__(self, source=None, endpoint: str = None):
+    def __init__(self, endpoint: str = None):
         super().__init__()
-        self.source = source
         self.endpoint = endpoint
         self.country_list = {}
 
@@ -25,7 +24,6 @@ class ExternalReader(Reader):
             try:
                 reader = csv.DictReader(source, delimiter=';')
                 for line in reader:
-                    print(line)
                     transmitter = Transmitter(
                         band=line["band"],
                         external_id=int(line['id']),
@@ -55,10 +53,17 @@ class ExternalReader(Reader):
     def _download_countries(self):
         response = req.get(self.endpoint + "/countries/")
         for country in response.json():
-            self.country_list.update({country["country_code"]: country["is_enabled"]})
+            if country["country_code"] is not None and country["country_code"] not in self.country_list:
+                self.country_list[country["country_code"]] = country["is_enabled"]
 
     def download_data(self):
+        if self.endpoint is None:
+            raise Exception("Endpoint is not set")
+        if len(self.transmitter_list) > 0:
+            self.transmitter_list.clear()
         self._download_countries()
+        if len(self.country_list) is 0:
+            raise Exception("No countries found")
         for country in self.country_list:
             if self.country_list[country]:
                 headers = {'user-agent': 'SignalMap Updater 1.0'}

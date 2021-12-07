@@ -20,7 +20,7 @@ def get_location_file(path: str,
     """
     if path[-1] != '/':
         path += '/'
-    location_path = f"{path}{location_filename}"
+    location_path = f"{path}{location_filename}.qth"
     try:
         with open(location_path, 'w+') as location_file:
             location_file.write(f"{station_name}\n")
