@@ -1,9 +1,12 @@
 import os
 from time import sleep
 from google.cloud import storage
+import pycountry
 
 import requests as req
 from json import dumps
+
+from models.country import Country, CountryCompare
 from .antennafilegenerator import get_antenna_file
 from .locationfilegenerator import get_location_file
 from models import Transmitter
@@ -14,6 +17,7 @@ class DBUpdater:
     """
     Class for updating the database with new data.
     """
+
     def __init__(self, endpoint: str):
         self.endpoint = endpoint
         self.transmitter_list = []
@@ -39,14 +43,52 @@ class DBUpdater:
 
         :return: None.
         """
+        self.update_countries()
+        self.update_transmitters()
+
+    def update_countries(self):
+        """
+        Update the list of countries.
+
+        :return: None.
+        """
+        temp_internal_country_list: dict[str, CountryCompare] = {}
+        signalmap_country_response = req.get(f"{self.endpoint}/countries/")
+        signalmap_country_response.data = signalmap_country_response.json()
+        for country in signalmap_country_response.data:
+            c: CountryCompare = CountryCompare(country["country_code"], country["country_name"])
+            temp_internal_country_list[c.country_code] = c
+
+        temp_external_country_list: dict[str, CountryCompare] = {}
+        for country in pycountry.countries:
+            c: CountryCompare = CountryCompare(country.alpha_2, country.name)
+            temp_external_country_list[c.country_code] = c
+
+        country_list_intersection = set(temp_internal_country_list).intersection(temp_external_country_list)
+        if len(country_list_intersection) != len(temp_internal_country_list):
+            for country in temp_internal_country_list:
+                if country not in temp_external_country_list:
+                    data = convert_country_obj_to_json(temp_internal_country_list[country])
+                    req.post(f"{self.endpoint}/countries/delete/", data)
+            for country in temp_external_country_list:
+                if country not in temp_internal_country_list:
+                    country.is_enabled = False
+                    data = convert_country_obj_to_json(temp_external_country_list[country])
+                    req.post(f"{self.endpoint}/countries/create/", data)
+        else:
+            print("Countries already updated")
+
+    def update_transmitters(self):
         for unit in self.transmitter_list:
             sleep(0.2)
-            response = req.get(f"{self.endpoint}/transmitters/get/external/?band={str(unit.band)}&external_id={str(unit.external_id)}")
+            response = req.get(
+                f"{self.endpoint}/transmitters/get/external/?band={str(unit.band)}&external_id={str(unit.external_id)}")
             print("ZAPYTANIE:" + str(response) + " " + str(response.text))
             if response.text == "null":
                 location_filename = f"{unit.country_id}_{unit.band}_{unit.external_id}"
                 get_antenna_file("./", location_filename, unit.antenna_direction, unit.pattern_h, unit.pattern_v)
-                get_location_file("./", location_filename, unit.station, unit.latitude, unit.longitude, unit.antenna_height)
+                get_location_file("./", location_filename, unit.station, unit.latitude, unit.longitude,
+                                  unit.antenna_height)
                 try:
                     run_simulation("./", location_filename, unit.band, float(unit.erp))
                     coverage_url = upload_to_gcloud_storage(f"signalmap-{unit.band}", f"{location_filename}.png")
@@ -94,6 +136,16 @@ def convert_transmitter_obj_to_json(obj):
     :return: Json object.
     """
     return dumps(obj.__dict__)
+
+
+def convert_country_obj_to_json(c):
+    """
+    Converts Country object to json.
+
+    :param c: Country object.
+    :return: Json object.
+    """
+    return dumps(c.__dict__)
 
 
 def delete_files(location_filename: str, station_name: str):
