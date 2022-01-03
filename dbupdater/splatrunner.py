@@ -94,6 +94,15 @@ def run_simulation(path: str,
         receiver_height = 10
         db_threshold = 48
 
+    if erp < 0.1:
+        coverage_radius = 150
+    elif erp < 1:
+        coverage_radius = 200
+    elif erp < 5:
+        coverage_radius = 250
+    else:
+        coverage_radius = 300
+
     location_filepath = f"{path}{location_filename}"
 
     erp_watts = ceil(erp * 1000)
@@ -108,7 +117,7 @@ def run_simulation(path: str,
     else:
         raise Exception("Files not found")
 
-    splat_command = f'{os.getenv("SPLAT_PATH")}splat -t {location_filename} -erp {erp_watts} -L {receiver_height} -R 200 -gc 10.0 -db {db_threshold} -d {os.getenv("SRTM_PATH")} -metric -olditm -ngs -kml -N -o {location_filepath}.ppm'
+    splat_command = f'{os.getenv("SPLAT_PATH")}splat -t {location_filename} -erp {erp_watts} -L {receiver_height} -R {coverage_radius} -gc 10.0 -db {db_threshold} -d {os.getenv("SRTM_PATH")} -metric -olditm -ngs -kml -N -o {location_filepath}.ppm'
     try:
         subprocess.run(splat_command, shell=True)
     except subprocess.CalledProcessError as e:
