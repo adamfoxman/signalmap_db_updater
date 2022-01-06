@@ -134,7 +134,9 @@ def run_simulation(path: str,
         print(e)
         return "error"
 
-    replace_in_file(f"{location_filepath}.kml", f"{location_filepath}.ppm", f"{location_filepath}.png")
+    replace_in_file(f"{location_filepath}.kml",
+                    f"{location_filepath}.ppm",
+                    f"https://storage.googleapis.com/signalmap-{transmitter_type}/{location_filename}.png")
 
     return f"{location_filename}.png"
 
