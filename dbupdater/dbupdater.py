@@ -76,7 +76,7 @@ class DBUpdater:
                     data = convert_country_obj_to_json(temp_external_country_list[country])
                     req.post(f"{self.endpoint}/countries/create/", data)
         else:
-            print("Countries already updated")
+            print("Countries are up to date.")
 
     def update_transmitters(self):
         for unit in self.transmitter_list:
@@ -93,6 +93,7 @@ class DBUpdater:
                     run_simulation("./", location_filename, unit.band, float(unit.erp))
                     coverage_url = upload_to_gcloud_storage(f"signalmap-{unit.band}", f"{location_filename}.png")
                     kml_url = upload_to_gcloud_storage(f"signalmap-{unit.band}", f"{location_filename}.kml")
+                    upload_to_gcloud_storage(f"signalmap-{unit.band}", f"{location_filename}-ck.png")
                     if coverage_url is not None and kml_url is not None:
                         unit.kml_file = kml_url
                         unit.coverage_file = coverage_url
@@ -102,7 +103,12 @@ class DBUpdater:
                 json_transmitter = convert_transmitter_obj_to_json(unit)
                 print("to co wysylamy:" + str(json_transmitter))
                 res = req.post("http://localhost/api/v1/transmitters/create/", json_transmitter)
-                print("ODPOWIEDŻ: " + str(res.text))
+                print("RESPONSE: " + str(res.text))
+                if res.status_code == 200:
+                    print("Transmitter created successfully")
+                else:
+                    print("Transmitter not created")
+
                 delete_files(location_filename, unit.station)
             else:
                 print("Już istnieje.")
@@ -149,9 +155,10 @@ def convert_country_obj_to_json(c):
 
 
 def delete_files(location_filename: str, station_name: str):
-    delete_file(f"./{location_filename}.png")
     delete_file(f"./{location_filename}.ppm")
+    delete_file(f"./{location_filename}.png")
     delete_file(f"./{location_filename}-ck.ppm")
+    delete_file(f"./{location_filename}-ck.png")
     delete_file(f"./{location_filename}.kml")
     delete_file(f"./{location_filename}.az")
     delete_file(f"./{location_filename}.qth")

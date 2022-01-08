@@ -134,9 +134,21 @@ def run_simulation(path: str,
         print(e)
         return "error"
 
+    try:
+        with Image(filename=f"{location_filepath}-ck.ppm") as img:
+            with img.convert('png') as converted:
+                converted.save(filename=f"{location_filepath}-ck.png")
+    except Exception as e:
+        print(e)
+        return "error"
+
     replace_in_file(f"{location_filepath}.kml",
                     f"{location_filepath}.ppm",
                     f"https://storage.googleapis.com/signalmap-{transmitter_type}/{location_filename}.png")
+
+    replace_in_file(f"{location_filepath}.kml",
+                    f"{location_filepath}-ck.ppm",
+                    f"https://storage.googleapis.com/signalmap-{transmitter_type}/{location_filename}-ck.png")
 
     return f"{location_filename}.png"
 
