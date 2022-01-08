@@ -28,7 +28,7 @@ class Transmitter:
     external_id: int = None
     frequency: float = None
     mode: str = None
-    erp: float = 1
+    erp: float = 1.0
     antenna_height: int = 100
     antenna_pattern: str = None
     antenna_direction: str = None
@@ -44,7 +44,7 @@ class Transmitter:
     height: int = None
     station: str = None
     kml_file: str = None
-    coverage: str = None
+    coverage_file: str = None
 
     def __init__(self,
                  band: str,
@@ -60,36 +60,31 @@ class Transmitter:
                  latitude: float,
                  longitude: float,
                  station: str,
+                 height: int,
                  precision: int = 3,
                  antenna_height: int = 100,
-                 erp: float = 1,
-                 height: int = 100,
+                 erp: float = 1.0,
                  pattern_h: str = None,
                  pattern_v: str = None):
         self.band = band
         self.external_id = external_id
         self.frequency = frequency
         self.erp = erp
-        self.antenna_height = antenna_height
+        self.antenna_height = antenna_height if antenna_height != "" else 0
         self.location = location
-        self.region = region
+        self.region = region if region is not None else ""
         self.country_id = country_id
         self.latitude = latitude
         self.longitude = longitude
-        self.height = height
         self.station = station
-
         self.antenna_direction = antenna_direction
-
-        if pattern_h is not None:
-            self.pattern_h = pattern_h
-        if pattern_v is not None:
-            self.pattern_v = pattern_v
-
+        self.height = height if height != "" else 0
+        self.pattern_h = pattern_h if pattern_h is not None else ""
+        self.pattern_v = pattern_v if pattern_v is not None else ""
         self.mode = mode
-        self.antenna_pattern = antenna_pattern
+        self.antenna_pattern = antenna_pattern if antenna_pattern is not None else ""
         self.polarisation = polarisation
-        self.precision = precision
+        self.precision = precision if precision != "" else 0
 
     def __str__(self):
         if self.band == 'f':
@@ -100,4 +95,41 @@ class Transmitter:
             type_of_transmitter = 'TV'
         else:
             type_of_transmitter = 'Unknown'
-        return f"{type_of_transmitter} Transmitter(band={self.band}, external_id={self.external_id}, frequency={self.frequency}, mode={self.mode}, erp={self.erp}, antenna_height={self.antenna_height}, antenna_pattern={self.antenna_pattern}, antenna_direction={self.antenna_direction}, polarisation={self.polarisation}, location={self.location}, region={self.region}, country_id={self.country_id}, latitude={self.latitude}, longitude={self.longitude}, precision={self.precision}, height={self.height}, station={self.station}, pattern_h={self.pattern_h}, pattern_v={self.pattern_v}) "
+        return f"{type_of_transmitter} {self.erp} kW transmitter with external id = {self.external_id} working on {self.frequency} MHz from {self.location} in {self.country_id}"
+
+    def __eq__(self, other):
+        if not isinstance(other, Transmitter):
+            return False
+        if int(self.height) != int(other.height):
+            return False
+        if int(self.external_id) != int(other.external_id):
+            return False
+        if float(self.frequency) != float(other.frequency):
+            return False
+        if int(self.antenna_height) != int(other.antenna_height):
+            return False
+        if str(self.antenna_pattern) != str(other.antenna_pattern):
+            return False
+        if str(self.band) != str(other.band):
+            return False
+        if float(self.erp) != float(other.erp):
+            return False
+        if float(self.latitude) != float(other.latitude):
+            return False
+        if float(self.longitude) != float(other.longitude):
+            return False
+        if str(self.location) != str(other.location):
+            return False
+        if str(self.polarisation) != str(other.polarisation):
+            return False
+        if str(self.region) != str(other.region):
+            return False
+        if str(self.station) != str(other.station):
+            return False
+        if str(self.country_id) != str(other.country_id):
+            return False
+        if str(self.pattern_h) != str(other.pattern_h):
+            return False
+        if str(self.pattern_v) != str(other.pattern_v):
+            return False
+        return True

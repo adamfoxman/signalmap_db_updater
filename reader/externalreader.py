@@ -66,7 +66,6 @@ class ExternalReader(Reader):
                         station=line['station'],
                         country_id=country
                     )
-                    print(transmitter)
                     self.transmitter_list.append(transmitter)
             except Exception:
                 raise Exception("Provided source is not valid")
