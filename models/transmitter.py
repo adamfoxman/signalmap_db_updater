@@ -43,8 +43,11 @@ class Transmitter:
     precision: int = 3
     height: int = None
     station: str = None
-    kml_file: str = None
     coverage_file: str = None
+    north_bound: float = None
+    south_bound: float = None
+    east_bound: float = None
+    west_bound: float = None
 
     def __init__(self,
                  band: str,

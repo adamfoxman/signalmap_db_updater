@@ -86,7 +86,7 @@ def run_simulation(path: str,
         db_threshold = 48
     elif transmitter_type == 'f':
         receiver_height = 10
-        db_threshold = 34
+        db_threshold = 48
     elif transmitter_type == 'd':
         receiver_height = 1.5
         db_threshold = 58
@@ -97,11 +97,11 @@ def run_simulation(path: str,
     if erp < 0.1:
         coverage_radius = 150
     elif erp < 1:
-        coverage_radius = 200
-    elif erp < 5:
         coverage_radius = 250
+    elif erp < 5:
+        coverage_radius = 350
     else:
-        coverage_radius = 300
+        coverage_radius = 400
 
     location_filepath = f"{path}{location_filename}"
 

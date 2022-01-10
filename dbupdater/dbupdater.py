@@ -1,5 +1,9 @@
 import os
 from time import sleep
+
+import xml.etree.ElementTree as ET
+from pykml import parser
+from bs4 import BeautifulSoup
 from google.cloud import storage
 import pycountry
 
@@ -119,7 +123,11 @@ class DBUpdater:
                 )
                 if unit != transmitter_from_internal_source:
                     print(unit.__dict__.items() ^ transmitter_from_internal_source.__dict__.items())
-                    self.generate_transmitter(unit)
+                    try:
+                        self.generate_transmitter(unit)
+                    except Exception as e:
+                        print(e)
+                        continue
                 else:
                     print("Transmitter is up to date.")
 
@@ -130,12 +138,19 @@ class DBUpdater:
                           unit.antenna_height if unit.antenna_height != 0 else 100)
         try:
             run_simulation("./", location_filename, unit.band, float(unit.erp))
+            north, south, east, west = get_boundaries(f"./{location_filename}.kml")
             coverage_url = upload_to_gcloud_storage(f"signalmap-{unit.band}", f"{location_filename}.png")
-            kml_url = upload_to_gcloud_storage(f"signalmap-{unit.band}", f"{location_filename}.kml")
-            upload_to_gcloud_storage(f"signalmap-{unit.band}", f"{location_filename}-ck.png")
-            if coverage_url is not None and kml_url is not None:
-                unit.kml_file = kml_url
+            if coverage_url is not None:
                 unit.coverage_file = coverage_url
+            else:
+                raise Exception("Coverage file is not uploaded.")
+            if north != 0 and south != 0 and east != 0 and west != 0:
+                unit.north_bound = north
+                unit.south_bound = south
+                unit.east_bound = east
+                unit.west_bound = west
+            else:
+                raise Exception("Bounds are not set.")
         except Exception as e:
             raise e
         json_transmitter = convert_transmitter_obj_to_json(unit)
@@ -187,6 +202,21 @@ def convert_country_obj_to_json(c):
     :return: Json object.
     """
     return dumps(c.__dict__)
+
+
+# Get boundaries from provided kml file from LatLonBox in GroundOverlay and return it as four floats.
+def get_boundaries(kml_file_path: str):
+    with open(kml_file_path, 'r') as f:
+        try:
+            root = parser.parse(f).getroot()
+            north = float(root.Folder.GroundOverlay.LatLonBox.north)
+            south = float(root.Folder.GroundOverlay.LatLonBox.south)
+            east = float(root.Folder.GroundOverlay.LatLonBox.east)
+            west = float(root.Folder.GroundOverlay.LatLonBox.west)
+            return north, south, east, west
+        except Exception as e:
+            print(e)
+            return 0, 0, 0, 0
 
 
 def delete_files(location_filename: str, station_name: str):
