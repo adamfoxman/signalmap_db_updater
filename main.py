@@ -4,7 +4,7 @@ from reader.csvreader import CSVReader
 from reader.externalreader import ExternalReader
 from dbupdater import DBUpdater
 from dbupdater import get_antenna_file, get_location_file, run_simulation
-from tests.dbupdater.test_antennafilegenerator import test_parse_antenna_direction
+# from tests.dbupdater.test_antennafilegenerator import test_parse_antenna_direction
 
 
 def main():
