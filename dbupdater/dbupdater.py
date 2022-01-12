@@ -206,7 +206,9 @@ class DBUpdater:
                     req.delete(f"{self.endpoint}/countries/delete/{country.country_code}")
             for country in temp_external_country_list.values():
                 if country not in temp_internal_country_list.values():
-                    c: Country = Country(country_code=country.country_code, country_name=country.country_name)
+                    c: Country = Country(country_code=country.country_code,
+                                         country_name=country.country_name,
+                                         is_enabled="True" == os.getenv("UPDATE_COUNTRIES"))
                     req.post(f"{self.endpoint}/countries/create/", data=convert_country_obj_to_json(c))
                 # if country not in temp_internal_country_list:
                 #     c: Country = Country(country_code=country_code, country_name=country.country_name)
