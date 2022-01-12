@@ -72,8 +72,8 @@ class DBUpdater:
                 country_name=country.name)
             temp_external_country_list[c.country_code] = c
 
-        country_list_intersection = set(temp_internal_country_list).intersection(temp_external_country_list)
-        if len(country_list_intersection) != len(temp_internal_country_list):
+        # country_list_intersection = set(temp_internal_country_list).intersection(temp_external_country_list)
+        if len(temp_external_country_list) != len(temp_internal_country_list):
             for country in temp_internal_country_list:
                 if country not in temp_external_country_list:
                     data = convert_country_obj_to_json(temp_internal_country_list[country])

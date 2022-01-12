@@ -86,20 +86,20 @@ def split_string_to_list(pattern):
         return max_value, pattern
 
 
-def parse_antenna_direction(antenna_direction: str):
-    antenna_direction = [antdir.strip(",; ") for antdir in re.split(r"[ ,;]", antenna_direction.replace(" - ", "-").replace(" – ", "-"))]
-    antenna_beams = []
-    for antdir in antenna_direction:
-        if antdir in ["", '-', ", -", "; -", ";", ",", "–"]:
-            continue
-        if "-" in antdir:
-            antdir = antdir.split("-")
-            antdir = {"beam_start": int(antdir[0]), "beam_end": int(antdir[1])}
-            antenna_beams.append(antdir)
-        elif "–" in antdir:
-            antdir = antdir.split("–")
-            antdir = {"beam_start": int(antdir[0]), "beam_end": int(antdir[1])}
-            antenna_beams.append(antdir)
-        else:
-            antenna_beams.append({"beam": int(antdir)})
-    return antenna_beams
+# def parse_antenna_direction(antenna_direction: str):
+#     antenna_direction = [antdir.strip(",; ") for antdir in re.split(r"[ ,;]", antenna_direction.replace(" - ", "-").replace(" – ", "-"))]
+#     antenna_beams = []
+#     for antdir in antenna_direction:
+#         if antdir in ["", '-', ", -", "; -", ";", ",", "–"]:
+#             continue
+#         if "-" in antdir:
+#             antdir = antdir.split("-")
+#             antdir = {"beam_start": int(antdir[0]), "beam_end": int(antdir[1])}
+#             antenna_beams.append(antdir)
+#         elif "–" in antdir:
+#             antdir = antdir.split("–")
+#             antdir = {"beam_start": int(antdir[0]), "beam_end": int(antdir[1])}
+#             antenna_beams.append(antdir)
+#         else:
+#             antenna_beams.append({"beam": int(antdir)})
+#     return antenna_beams
