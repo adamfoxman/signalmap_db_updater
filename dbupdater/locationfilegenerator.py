@@ -21,6 +21,10 @@ def get_location_file(path: str,
     if path[-1] != '/':
         path += '/'
     location_path = f"{path}{location_filename}.qth"
+
+    if elevation is None:
+        # Assume 100 meters if no elevation is given.
+        elevation = 100
     try:
         with open(location_path, 'w+') as location_file:
             location_file.write(f"{station_name}\n")

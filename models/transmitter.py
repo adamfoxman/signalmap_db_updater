@@ -72,7 +72,7 @@ class Transmitter:
         self.band = band
         self.external_id = external_id
         self.frequency = frequency
-        self.erp = erp
+        self.erp = erp if erp is not None or erp != "" else 0.0
         self.antenna_height = antenna_height if antenna_height != "" else 0
         self.location = location
         self.region = region if region is not None else ""

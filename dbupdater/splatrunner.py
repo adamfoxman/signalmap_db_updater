@@ -94,6 +94,10 @@ def run_simulation(path: str,
         receiver_height = 10
         db_threshold = 48
 
+    # if ERP power is not given, use default value
+    if erp == 0.0:
+        erp = 1.0
+
     if erp < 0.1:
         coverage_radius = 150
     elif erp < 1:

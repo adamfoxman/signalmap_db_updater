@@ -1,5 +1,6 @@
 from textwrap import wrap
 from math import ceil, sqrt
+import re
 
 
 def get_antenna_file(path: str,
@@ -25,7 +26,20 @@ def get_antenna_file(path: str,
         pattern = []
 
         if pattern_h == "" and pattern_v == "" and antenna_direction != "":
-            # to be implemented
+            # antenna_beams = parse_antenna_direction(antenna_direction)
+            # antenna_values = [0.0] * 360
+            # for beam in antenna_beams:
+            #     if "beam" in beam:
+            #         antenna_values[beam["beam"]] = 1.0
+            #         for i in range(beam["beam"] - 30, beam["beam"] + 30 + 1):
+            #             if i < 0:
+            #                 continue
+            #             if i > 359:
+            #                 continue
+            #
+            #     else:
+            #         for i in range(beam["beam_start"], beam["beam_end"] + 1):
+            #             antenna_values[i] = 1.0
             return None
 
         h_max_value, pattern_h = split_string_to_list(pattern_h)
@@ -70,3 +84,22 @@ def split_string_to_list(pattern):
             pattern[line] = float(string)
         max_value = max(pattern)
         return max_value, pattern
+
+
+def parse_antenna_direction(antenna_direction: str):
+    antenna_direction = [antdir.strip(",; ") for antdir in re.split(r"[ ,;]", antenna_direction.replace(" - ", "-").replace(" – ", "-"))]
+    antenna_beams = []
+    for antdir in antenna_direction:
+        if antdir in ["", '-', ", -", "; -", ";", ",", "–"]:
+            continue
+        if "-" in antdir:
+            antdir = antdir.split("-")
+            antdir = {"beam_start": int(antdir[0]), "beam_end": int(antdir[1])}
+            antenna_beams.append(antdir)
+        elif "–" in antdir:
+            antdir = antdir.split("–")
+            antdir = {"beam_start": int(antdir[0]), "beam_end": int(antdir[1])}
+            antenna_beams.append(antdir)
+        else:
+            antenna_beams.append({"beam": int(antdir)})
+    return antenna_beams
