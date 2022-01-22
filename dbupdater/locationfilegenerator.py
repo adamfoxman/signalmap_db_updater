@@ -1,3 +1,5 @@
+import logging
+
 def get_location_file(path: str,
                       location_filename: str,
                       station_name: str,
@@ -32,6 +34,7 @@ def get_location_file(path: str,
             location_file.write(f"{longitude * -1}\n")
             location_file.write(f"{elevation} meters")
     except FileNotFoundError:
+        logging.error(f"Could not write location file to {location_path}.")
         print(f"Error: {location_filename} not found.")
 
     return location_filename

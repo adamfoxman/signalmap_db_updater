@@ -2,6 +2,7 @@ import csv
 import urllib.request
 import os
 import sys
+import logging
 from io import IOBase
 from io import BytesIO
 
@@ -29,11 +30,15 @@ class ExternalReader(Reader):
     """
     def __init__(self, endpoint: str = None):
         super().__init__()
+        logging.info("Initializing external reader")
         try:
+            logging.info("Testing connection to API")
             req.get(endpoint)
             self.endpoint = endpoint
         except req.ConnectionError:
             print(f"URL %s is not available on the internet.", endpoint)
+            logging.critical("URL %s is not available on the internet.", endpoint)
+
         self.country_list = {}
 
     def _import_country_data(self, source=None, country: str = None):
@@ -92,15 +97,22 @@ class ExternalReader(Reader):
         :return: None.
         """
         if self.endpoint is None:
+            logging.critical("No endpoint provided")
             raise Exception("Endpoint is not set")
         if len(self.transmitter_list) > 0:
             self.transmitter_list.clear()
         self._download_countries()
         if len(self.country_list) == 0:
+            logging.critical("No countries available")
             raise Exception("No countries found")
         for country in self.country_list:
             if self.country_list[country]:
-                headers = {'user-agent': 'SignalMap Updater 1.0'}
-                request = requests.get(get_api_address(country), headers=headers)
-                data = request.content.decode('utf-8', errors='ignore').strip().split('\r\n')
-                self._import_country_data(data, country)
+                try:
+                    logging.info("Downloading data for country %s", country)
+                    headers = {'user-agent': 'SignalMap Updater 1.0'}
+                    request = requests.get(get_api_address(country), headers=headers)
+                    data = request.content.decode('utf-8', errors='ignore').strip().split('\r\n')
+                    self._import_country_data(data, country)
+                except Exception:
+                    logging.error("Error while downloading data for country %s", country)
+                    raise Exception("Error while downloading data for country " + country)

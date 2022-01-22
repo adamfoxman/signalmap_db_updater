@@ -1,5 +1,6 @@
 import os
 import time
+import logging
 from functools import partial
 from multiprocessing.pool import ThreadPool
 from time import sleep
@@ -35,6 +36,7 @@ def upload_to_gcloud_storage(bucket_name: str, file_name: str):
         blob.upload_from_filename(file_name)
         return f"https://storage.googleapis.com/{bucket_name}/{file_name}"
     except Exception as e:
+        logging.error(e)
         print(e)
         return None
 
@@ -70,6 +72,7 @@ def get_boundaries(kml_file_path: str):
             west = float(root.Folder.GroundOverlay.LatLonBox.west)
             return north, south, east, west
         except Exception as e:
+            logging.error(e)
             print(e)
             return 0, 0, 0, 0
 
@@ -107,10 +110,12 @@ def delete_file(file_name: str):
     try:
         os.remove(file_name)
     except FileNotFoundError:
+        logging.error(f"File {file_name} not found.")
         print("File not found.")
 
 
 def generate_transmitter(unit: Transmitter):
+    logging.info(f"Generating map for {unit}")
     location_filename = f"{unit.country_id}_{unit.band}_{unit.external_id}"
     get_antenna_file("./", location_filename, unit.antenna_direction, unit.pattern_h, unit.pattern_v)
     get_location_file("./", location_filename, unit.station, unit.latitude, unit.longitude,
@@ -138,6 +143,7 @@ def generate_transmitter(unit: Transmitter):
         else:
             raise Exception("Bounds are not set.")
     except Exception as e:
+        logging.error(e)
         raise e
     delete_files(location_filename, unit.station)
 
@@ -149,8 +155,10 @@ def create_transmitter(unit: Transmitter):
     res = req.post("http://localhost/api/v1/transmitters/create/", json_transmitter)
     print("RESPONSE: " + str(res.text))
     if res.status_code == 200:
+        logging.info(f"Transmitter {unit.external_id} created.")
         print("Transmitter created successfully")
     else:
+        logging.error(f"Transmitter {unit.external_id} not created.")
         print("Transmitter not created")
 
 
@@ -162,8 +170,10 @@ def update_transmitter(unit: Transmitter):
                    json_transmitter)
     print("RESPONSE: " + str(res.text))
     if res.status_code == 200:
+        logging.info(f"Transmitter {unit.external_id} updated.")
         print("Transmitter updated successfully")
     else:
+        logging.error(f"Transmitter {unit.external_id} not updated.")
         print("Transmitter not updated")
 
 
@@ -176,12 +186,14 @@ def update_transmitters_multi(endpoint: str, unit: Transmitter):
         try:
             create_transmitter(unit)
         except Exception as e:
+            logging.error(e)
             print(e)
     else:
         if os.getenv('REGENERATE_MAPS') == 'True':
             try:
                 update_transmitter(unit)
             except Exception as e:
+                logging.error(e)
                 print(e)
         else:
             # compare unit from external source with unit from internal database
@@ -212,6 +224,7 @@ def update_transmitters_multi(endpoint: str, unit: Transmitter):
                     update_transmitter(unit)
                 except Exception as e:
                     print(e)
+                    logging.error(e)
             else:
                 print("Transmitter is up to date.")
 
@@ -229,6 +242,7 @@ class DBUpdater:
             req.get(endpoint)
             self.endpoint = endpoint
         except req.ConnectionError:
+            logging.error("Connection error")
             print(f"URL %s is not available on the internet.", endpoint)
 
     def set_transmitter_list(self, tlist: list[Transmitter]):
@@ -305,12 +319,14 @@ class DBUpdater:
                 try:
                     create_transmitter(unit)
                 except Exception as e:
+                    logging.error(e)
                     print(e)
             else:
                 if os.getenv('REGENERATE_MAPS') == 'True':
                     try:
                         update_transmitter(unit)
                     except Exception as e:
+                        logging.error(e)
                         print(e)
                 else:
                     # compare unit from external source with unit from internal database
@@ -340,6 +356,7 @@ class DBUpdater:
                         try:
                             update_transmitter(unit)
                         except Exception as e:
+                            logging.error(e)
                             print(e)
                     else:
                         print("Transmitter is up to date.")
