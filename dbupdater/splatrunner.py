@@ -1,6 +1,7 @@
 import os
 import base64
 from math import ceil
+from shutil import copyfile
 
 from wand.image import Image
 from wand.color import Color
@@ -36,24 +37,32 @@ def get_signal_color_file(filepath: str, transmitter_type: str) -> str:
     :param transmitter_type: Type of a transmitter (FM/DAB/TV)
     :return: Path to the .scf file.
     """
-    if transmitter_type == 'f':
-        file_r = open("f.scf", 'r')
-    elif transmitter_type == 'd':
-        file_r = open("d.scf", 'r')
-    elif transmitter_type == 't':
-        file_r = open("t.scf", 'r')
-    else:
-        raise Exception("Invalid transmitter type")
-
     try:
-        filedata = file_r.read()
-        with open(f"{filepath}.scf", 'w') as file_w:
-            file_w.write(filedata)
-            file_w.close()
-        file_r.close()
+        if transmitter_type == 'f':
+            copyfile('f.scf', f"{filepath}.scf")
+        elif transmitter_type == 'd':
+            copyfile('d.scf', f"{filepath}.scf")
+        elif transmitter_type == 't':
+            copyfile('t.scf', f"{filepath}.scf")
+        else:
+            raise Exception("Invalid transmitter type")
     except Exception as e:
-        print(e)
-        raise Exception("Could not write signal color file")
+        raise Exception("Could not copy .scf file")
+
+    return filepath
+
+
+def get_lrp_file(filepath: str) -> str:
+    """
+    Save a .lrp file for a particular transmitter
+
+    :param filepath: Path of a file in a filesystem.
+    :return: Path to the .lrp file.
+    """
+    try:
+        copyfile('splat.lrp', f"{filepath}.lrp")
+    except Exception as e:
+        raise Exception("Could not copy .lrp file")
 
     return filepath
 
@@ -71,7 +80,8 @@ def file_exists(file_path: str) -> bool:
 def run_simulation(path: str,
                    location_filename: str,
                    transmitter_type: str,
-                   erp: float) -> str:
+                   erp: float,
+                   frequency: float) -> str:
     """
     Run a simulation with the given parameters
 
@@ -79,6 +89,7 @@ def run_simulation(path: str,
     :param location_filename: Filename for the coverage files.
     :param transmitter_type: Type of a transmitter (FM/DAB/TV)
     :param erp: ERP power of a transmitter
+    :param frequency: Frequency of a transmitter
     :return: Path to the simulation output file.
     """
     if transmitter_type == 't':
@@ -113,6 +124,7 @@ def run_simulation(path: str,
 
     try:
         get_signal_color_file(location_filepath, transmitter_type)
+        get_lrp_file(location_filepath)
     except Exception as e:
         print(e)
 
@@ -121,7 +133,7 @@ def run_simulation(path: str,
     else:
         raise Exception("Files not found")
 
-    splat_command = f'{os.getenv("SPLAT_PATH")}splat -t {location_filename} -erp {erp_watts} -L {receiver_height} -R {coverage_radius} -gc 10.0 -db {db_threshold} -d {os.getenv("SRTM_PATH")} -metric -olditm -ngs -kml -N -o {location_filepath}.ppm'
+    splat_command = f'{os.getenv("SPLAT_PATH")}splat -t {location_filename} -erp {erp_watts} -f {frequency} -L {receiver_height} -R {coverage_radius} -gc 10.0 -db {db_threshold} -d {os.getenv("SRTM_PATH")} -metric -olditm -ngs -kml -N -o {location_filepath}.ppm'
     try:
         subprocess.run(splat_command, shell=True)
     except subprocess.CalledProcessError as e:

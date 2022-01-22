@@ -29,7 +29,11 @@ class ExternalReader(Reader):
     """
     def __init__(self, endpoint: str = None):
         super().__init__()
-        self.endpoint = endpoint
+        try:
+            req.get(endpoint)
+            self.endpoint = endpoint
+        except req.ConnectionError:
+            print(f"URL %s is not available on the internet.", endpoint)
         self.country_list = {}
 
     def _import_country_data(self, source=None, country: str = None):
@@ -92,11 +96,11 @@ class ExternalReader(Reader):
         if len(self.transmitter_list) > 0:
             self.transmitter_list.clear()
         self._download_countries()
-        if len(self.country_list) is 0:
+        if len(self.country_list) == 0:
             raise Exception("No countries found")
         for country in self.country_list:
             if self.country_list[country]:
                 headers = {'user-agent': 'SignalMap Updater 1.0'}
                 request = requests.get(get_api_address(country), headers=headers)
-                data = request.content.decode('utf-8').split('\r\n')
+                data = request.content.decode('utf-8', errors='ignore').strip().split('\r\n')
                 self._import_country_data(data, country)

@@ -1,5 +1,9 @@
 import os
+import time
+from functools import partial
+from multiprocessing.pool import ThreadPool
 from time import sleep
+from multiprocessing import Pool, cpu_count
 
 from pykml import parser
 from google.cloud import storage
@@ -71,15 +75,26 @@ def get_boundaries(kml_file_path: str):
 
 
 def delete_files(location_filename: str, station_name: str):
-    delete_file(f"./{location_filename}.ppm")
-    delete_file(f"./{location_filename}.png")
-    delete_file(f"./{location_filename}-ck.ppm")
-    delete_file(f"./{location_filename}-ck.png")
-    delete_file(f"./{location_filename}.kml")
-    delete_file(f"./{location_filename}.az")
-    delete_file(f"./{location_filename}.qth")
-    delete_file(f"./{location_filename}.scf")
-    delete_file(f"./{station_name.replace(' ', '_')}-site_report.txt")
+    if os.path.isfile(f"./{location_filename}.ppm"):
+        delete_file(f"./{location_filename}.ppm")
+    if os.path.isfile(f"./{location_filename}.png"):
+        delete_file(f"./{location_filename}.png")
+    if os.path.isfile(f"./{location_filename}-ck.ppm"):
+        delete_file(f"./{location_filename}-ck.ppm")
+    if os.path.isfile(f"./{location_filename}-ck.png"):
+        delete_file(f"./{location_filename}-ck.png")
+    if os.path.isfile(f"./{location_filename}.kml"):
+        delete_file(f"./{location_filename}.kml")
+    if os.path.isfile(f"./{location_filename}.az"):
+        delete_file(f"./{location_filename}.az")
+    if os.path.isfile(f"./{location_filename}.qth"):
+        delete_file(f"./{location_filename}.qth")
+    if os.path.isfile(f"./{location_filename}.scf"):
+        delete_file(f"./{location_filename}.scf")
+    if os.path.isfile(f"./{location_filename}.lrp"):
+        delete_file(f"./{location_filename}.lrp")
+    if os.path.isfile(f"./{station_name.replace(' ', '_')}-site_report.txt"):
+        delete_file(f"./{station_name.replace(' ', '_')}-site_report.txt")
 
 
 def delete_file(file_name: str):
@@ -101,7 +116,14 @@ def generate_transmitter(unit: Transmitter):
     get_location_file("./", location_filename, unit.station, unit.latitude, unit.longitude,
                       unit.antenna_height if unit.antenna_height != 0 else 100)
     try:
-        run_simulation("./", location_filename, unit.band, float(unit.erp))
+        while not os.path.exists(f"./{location_filename}.az"):
+            time.sleep(1)
+        while not os.path.exists(f"./{location_filename}.qth"):
+            time.sleep(1)
+        if os.path.isfile(f"./{location_filename}.az") and os.path.isfile(f"./{location_filename}.qth"):
+            run_simulation("./", location_filename, unit.band, float(unit.erp), float(unit.frequency))
+        else:
+            raise Exception("Azimuth or QTH file not found.")
         north, south, east, west = get_boundaries(f"./{location_filename}.kml")
         coverage_url = upload_to_gcloud_storage(f"signalmap-{unit.band}", f"{location_filename}.png")
         if coverage_url is not None:
@@ -145,15 +167,64 @@ def update_transmitter(unit: Transmitter):
         print("Transmitter not updated")
 
 
+# multiprocessing friendly version of update_transmitters
+def update_transmitters_multi(endpoint: str, unit: Transmitter):
+    response = req.get(
+        f"{endpoint}/transmitters/get/external/?band={str(unit.band)}&external_id={str(unit.external_id)}")
+    print("ZAPYTANIE:" + str(response) + " " + str(response.text))
+    if response.text == "null":
+        try:
+            create_transmitter(unit)
+        except Exception as e:
+            print(e)
+    else:
+        if os.getenv('REGENERATE_MAPS') == 'True':
+            try:
+                update_transmitter(unit)
+            except Exception as e:
+                print(e)
+        else:
+            # compare unit from external source with unit from internal database
+            transmitter_from_internal_source = Transmitter(
+                external_id=int(response.json()["external_id"]),
+                band=response.json()["band"],
+                frequency=float(response.json()["frequency"]),
+                mode=response.json()["mode"],
+                erp=float(response.json()["erp"]),
+                antenna_height=int(response.json()["antenna_height"]),
+                antenna_pattern=response.json()["antenna_pattern"],
+                antenna_direction=response.json()["antenna_direction"],
+                pattern_h=response.json()["pattern_h"],
+                pattern_v=response.json()["pattern_v"],
+                polarisation=response.json()["polarisation"],
+                location=response.json()["location"],
+                region=response.json()["region"],
+                country_id=response.json()["country_id"],
+                latitude=float(response.json()["latitude"]),
+                longitude=float(response.json()["longitude"]),
+                precision=int(response.json()["precision"]),
+                height=int(response.json()["height"]),
+                station=response.json()["station"]
+            )
+            if unit != transmitter_from_internal_source:
+                print(unit.__dict__.items() ^ transmitter_from_internal_source.__dict__.items())
+                try:
+                    update_transmitter(unit)
+                except Exception as e:
+                    print(e)
+            else:
+                print("Transmitter is up to date.")
+
+
 class DBUpdater:
     """
     Class for updating the database with new data.
     """
 
     def __init__(self, endpoint: str):
-        self.endpoint = endpoint
         self.transmitter_list = []
         self.country_list = {}
+        self.pool = Pool()
         try:
             req.get(endpoint)
             self.endpoint = endpoint
@@ -176,7 +247,14 @@ class DBUpdater:
         :return: None.
         """
         self.update_countries()
-        self.update_transmitters()
+        if os.getenv('MULTIPROCESSING') == 'True':
+            func = partial(update_transmitters_multi, self.endpoint)
+            self.pool.map(func, self.transmitter_list)
+            self.pool.close()
+            self.pool.join()
+        else:
+            self.update_transmitters()
+        # self.update_transmitters()
 
     def update_countries(self):
         """
@@ -219,7 +297,7 @@ class DBUpdater:
 
     def update_transmitters(self):
         for unit in self.transmitter_list:
-            sleep(0.05)
+            sleep(0.1)
             response = req.get(
                 f"{self.endpoint}/transmitters/get/external/?band={str(unit.band)}&external_id={str(unit.external_id)}")
             print("ZAPYTANIE:" + str(response) + " " + str(response.text))
@@ -228,39 +306,51 @@ class DBUpdater:
                     create_transmitter(unit)
                 except Exception as e:
                     print(e)
-                    continue
             else:
-                # compare unit from external source with unit from internal database
-                transmitter_from_internal_source = Transmitter(
-                    external_id=int(response.json()["external_id"]),
-                    band=response.json()["band"],
-                    frequency=float(response.json()["frequency"]),
-                    mode=response.json()["mode"],
-                    erp=float(response.json()["erp"]),
-                    antenna_height=int(response.json()["antenna_height"]),
-                    antenna_pattern=response.json()["antenna_pattern"],
-                    antenna_direction=response.json()["antenna_direction"],
-                    pattern_h=response.json()["pattern_h"],
-                    pattern_v=response.json()["pattern_v"],
-                    polarisation=response.json()["polarisation"],
-                    location=response.json()["location"],
-                    region=response.json()["region"],
-                    country_id=response.json()["country_id"],
-                    latitude=float(response.json()["latitude"]),
-                    longitude=float(response.json()["longitude"]),
-                    precision=int(response.json()["precision"]),
-                    height=int(response.json()["height"]),
-                    station=response.json()["station"]
-                )
-                if unit != transmitter_from_internal_source:
-                    print(unit.__dict__.items() ^ transmitter_from_internal_source.__dict__.items())
+                if os.getenv('REGENERATE_MAPS') == 'True':
                     try:
                         update_transmitter(unit)
                     except Exception as e:
                         print(e)
-                        continue
                 else:
-                    print("Transmitter is up to date.")
+                    # compare unit from external source with unit from internal database
+                    transmitter_from_internal_source = Transmitter(
+                        external_id=int(response.json()["external_id"]),
+                        band=response.json()["band"],
+                        frequency=float(response.json()["frequency"]),
+                        mode=response.json()["mode"],
+                        erp=float(response.json()["erp"]),
+                        antenna_height=int(response.json()["antenna_height"]),
+                        antenna_pattern=response.json()["antenna_pattern"],
+                        antenna_direction=response.json()["antenna_direction"],
+                        pattern_h=response.json()["pattern_h"],
+                        pattern_v=response.json()["pattern_v"],
+                        polarisation=response.json()["polarisation"],
+                        location=response.json()["location"],
+                        region=response.json()["region"],
+                        country_id=response.json()["country_id"],
+                        latitude=float(response.json()["latitude"]),
+                        longitude=float(response.json()["longitude"]),
+                        precision=int(response.json()["precision"]),
+                        height=int(response.json()["height"]),
+                        station=response.json()["station"]
+                    )
+                    if unit != transmitter_from_internal_source:
+                        print(unit.__dict__.items() ^ transmitter_from_internal_source.__dict__.items())
+                        try:
+                            update_transmitter(unit)
+                        except Exception as e:
+                            print(e)
+                    else:
+                        print("Transmitter is up to date.")
+
+    def __getstate__(self):
+        self_dict = self.__dict__.copy()
+        del self_dict['pool']
+        return self_dict
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
 
 
 if __name__ == '__main__':
