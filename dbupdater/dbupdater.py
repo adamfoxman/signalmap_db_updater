@@ -151,9 +151,7 @@ def generate_transmitter(unit: Transmitter):
 def create_transmitter(unit: Transmitter):
     generate_transmitter(unit)
     json_transmitter = convert_transmitter_obj_to_json(unit)
-    print("to co wysylamy:" + str(json_transmitter))
     res = req.post("http://localhost/api/v1/transmitters/create/", json_transmitter)
-    print("RESPONSE: " + str(res.text))
     if res.status_code == 200:
         logging.info(f"Transmitter {unit.external_id} created.")
         print("Transmitter created successfully")
@@ -165,10 +163,8 @@ def create_transmitter(unit: Transmitter):
 def update_transmitter(unit: Transmitter):
     generate_transmitter(unit)
     json_transmitter = convert_transmitter_obj_to_json(unit)
-    print("to co wysylamy:" + str(json_transmitter))
     res = req.post(f"http://localhost/api/v1/transmitters/update/?band={unit.band}&external_id={unit.external_id}",
                    json_transmitter)
-    print("RESPONSE: " + str(res.text))
     if res.status_code == 200:
         logging.info(f"Transmitter {unit.external_id} updated.")
         print("Transmitter updated successfully")
