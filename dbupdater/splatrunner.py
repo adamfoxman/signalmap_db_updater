@@ -1,5 +1,5 @@
 import os
-import base64
+import logging
 from math import ceil
 from shutil import copyfile
 
@@ -25,7 +25,7 @@ def replace_in_file(file_path: str, find: str, replace: str):
         with open(file_path, 'w') as file:
             file.write(filedata)
     except Exception as e:
-        print(e)
+        logging.error(f'Error while replacing phrase in file: {e}')
 
 
 # save .scf file for a particular transmitter
@@ -126,6 +126,7 @@ def run_simulation(path: str,
         get_signal_color_file(location_filepath, transmitter_type)
         get_lrp_file(location_filepath)
     except Exception as e:
+        logging.error(f'Error while creating .scf and .lrp files: {e}')
         print(e)
 
     if file_exists(f"{location_filepath}.qth") and file_exists(f"{location_filepath}.scf") and file_exists(f"{location_filepath}.az"):
@@ -135,9 +136,9 @@ def run_simulation(path: str,
 
     splat_command = f'{os.getenv("SPLAT_PATH")}splat -t {location_filename} -erp {erp_watts} -f {frequency} -L {receiver_height} -R {coverage_radius} -gc 10.0 -db {db_threshold} -d {os.getenv("SRTM_PATH")} -metric -olditm -ngs -kml -N -o {location_filepath}.ppm'
     try:
-        subprocess.run(splat_command, shell=True)
+        subprocess.run(splat_command)
     except subprocess.CalledProcessError as e:
-        print(e)
+        logging.error(f'Error while running simulation: {e}')
         return "error"
 
     try:
@@ -147,7 +148,7 @@ def run_simulation(path: str,
             with img.convert('png') as converted:
                 converted.save(filename=f"{location_filepath}.png")
     except Exception as e:
-        print(e)
+        logging.error(e)
         return "error"
 
     try:
@@ -155,7 +156,7 @@ def run_simulation(path: str,
             with img.convert('png') as converted:
                 converted.save(filename=f"{location_filepath}-ck.png")
     except Exception as e:
-        print(e)
+        logging.error(e)
         return "error"
 
     replace_in_file(f"{location_filepath}.kml",

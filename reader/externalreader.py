@@ -20,7 +20,6 @@ def get_api_address(country_code: str):
     :return: API address.
     """
     address = str(os.getenv("API_ADDRESS")) + "?iso=" + country_code + "&token=" + str(os.getenv("API_TOKEN"))
-    print(address)
     return address
 
 
