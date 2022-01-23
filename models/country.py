@@ -14,3 +14,7 @@ class Country(CountryCompare):
         self.country_code = country_code
         self.country_name = country_name
         self.is_enabled = is_enabled
+
+
+if __name__ == "__main__":
+    pass

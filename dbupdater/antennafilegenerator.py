@@ -7,7 +7,7 @@ def get_antenna_file(path: str,
                      antenna_filename: str,
                      antenna_direction: str,
                      pattern_h: str,
-                     pattern_v: str):
+                     pattern_v: str) -> str:
     """
     Generates the antenna file for the given parameters.
 
@@ -77,7 +77,7 @@ def get_antenna_file(path: str,
     return antenna_filename
 
 
-def split_string_to_list(pattern):
+def split_string_to_list(pattern) -> (float, list):
     if pattern == "":
         return 0, None
     else:
@@ -106,3 +106,6 @@ def split_string_to_list(pattern):
 #         else:
 #             antenna_beams.append({"beam": int(antdir)})
 #     return antenna_beams
+
+if __name__ == "__main__":
+    pass

@@ -169,3 +169,6 @@ def run_simulation(path: str,
     return f"{location_filename}.png"
 
 
+if __name__ == "__main__":
+    pass
+

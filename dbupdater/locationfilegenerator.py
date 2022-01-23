@@ -40,3 +40,5 @@ def get_location_file(path: str,
     return location_filename
 
 
+if __name__ == "__main__":
+    pass

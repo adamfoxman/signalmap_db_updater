@@ -116,3 +116,7 @@ class ExternalReader(Reader):
                 except Exception:
                     logging.error("Error while downloading data for country %s", country)
                     raise Exception("Error while downloading data for country " + country)
+
+
+if __name__ == "__main__":
+    pass

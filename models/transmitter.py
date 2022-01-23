@@ -136,3 +136,6 @@ class Transmitter:
         if str(self.pattern_v) != str(other.pattern_v):
             return False
         return True
+
+if __name__ == "__main__":
+    pass

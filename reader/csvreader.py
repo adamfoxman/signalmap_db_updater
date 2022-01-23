@@ -40,3 +40,6 @@ class CSVReader(Reader):
                         ))
             except IOError:
                 raise Exception("Provided file does not exist or is not valid")
+
+if __name__ == "__main__":
+    pass

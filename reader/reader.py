@@ -12,3 +12,7 @@ class Reader:
 
     def get_transmitter_list(self):
         return self.transmitter_list
+
+
+if __name__ == "__main__":
+    pass
