@@ -109,14 +109,7 @@ def run_simulation(path: str,
     if erp == 0.0:
         erp = 1.0
 
-    if erp < 0.1:
-        coverage_radius = 150
-    elif erp < 1:
-        coverage_radius = 250
-    elif erp < 5:
-        coverage_radius = 350
-    else:
-        coverage_radius = 400
+    coverage_radius = 250
 
     location_filepath = f"{path}{location_filename}"
 
@@ -135,8 +128,9 @@ def run_simulation(path: str,
         raise Exception("Files not found")
 
     splat_command = f'{os.getenv("SPLAT_PATH")}splat -t {location_filename} -erp {erp_watts} -f {frequency} -L {receiver_height} -R {coverage_radius} -gc 10.0 -db {db_threshold} -d {os.getenv("SRTM_PATH")} -metric -olditm -ngs -kml -N -o {location_filepath}.ppm'
+    # splat_command = f'splat -t {location_filename} -erp {erp_watts} -f {frequency} -L {receiver_height} -R {coverage_radius} -gc 10.0 -db {db_threshold} -d {os.getenv("SRTM_PATH")} -metric -olditm -ngs -kml -N -o {location_filepath}.ppm'
     try:
-        subprocess.run(splat_command)
+        subprocess.run(splat_command, shell=True)
     except subprocess.CalledProcessError as e:
         logging.error(f'Error while running simulation: {e}')
         return "error"

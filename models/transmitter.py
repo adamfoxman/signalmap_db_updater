@@ -43,6 +43,8 @@ class Transmitter:
     precision: int = 3
     height: int = None
     station: str = None
+    station_id: int = None
+    logo_id: int = None
     coverage_file: str = None
     north_bound: float = None
     south_bound: float = None
@@ -63,6 +65,8 @@ class Transmitter:
                  latitude: float,
                  longitude: float,
                  station: str,
+                 station_id: int,
+                 logo_id: int,
                  height: int,
                  precision: int = 3,
                  antenna_height: int = 100,
@@ -80,6 +84,8 @@ class Transmitter:
         self.latitude = latitude
         self.longitude = longitude
         self.station = station
+        self.station_id = station_id
+        self.logo_id = logo_id
         self.antenna_direction = antenna_direction
         self.height = height if height != "" else 0
         self.pattern_h = pattern_h if pattern_h is not None else ""
@@ -129,6 +135,8 @@ class Transmitter:
             return False
         if str(self.station) != str(other.station):
             return False
+        if int(self.station_id) != int(other.station_id):
+            return False
         if str(self.country_id) != str(other.country_id):
             return False
         if str(self.pattern_h) != str(other.pattern_h):
@@ -136,6 +144,7 @@ class Transmitter:
         if str(self.pattern_v) != str(other.pattern_v):
             return False
         return True
+
 
 if __name__ == "__main__":
     pass

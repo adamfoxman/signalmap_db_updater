@@ -1,16 +1,13 @@
 import csv
-import urllib.request
 import os
 import sys
 import logging
-from io import IOBase
-from io import BytesIO
 
-import requests
 import requests as req
 
 from reader import Reader
 from models.transmitter import Transmitter
+from dbupdater.apicaller import InternalAPICaller
 
 
 def get_api_address(country_code: str):
@@ -19,7 +16,7 @@ def get_api_address(country_code: str):
     :param country_code: 2-letter ISO country code.
     :return: API address.
     """
-    address = str(os.getenv("API_ADDRESS")) + "?iso=" + country_code + "&token=" + str(os.getenv("API_TOKEN"))
+    address = str(os.getenv("EXTERNAL_API_ADDRESS")) + "?iso=" + country_code + "&token=" + str(os.getenv("API_TOKEN"))
     return address
 
 
@@ -27,16 +24,19 @@ class ExternalReader(Reader):
     """
     Reader class for external data sources.
     """
-    def __init__(self, endpoint: str = None):
+    def __init__(self, external_endpoint: str = None, internal_api_caller: InternalAPICaller = None):
         super().__init__()
         logging.info("Initializing external reader")
         try:
             logging.info("Testing connection to API")
-            req.get(endpoint)
-            self.endpoint = endpoint
+            req.get(external_endpoint)
+            self.endpoint = external_endpoint
+            self.api_caller = internal_api_caller
+            self.api_caller.set_url(os.getenv('INTERNAL_API_ADDRESS'))
         except req.ConnectionError:
-            print(f"URL %s is not available on the internet.", endpoint)
-            logging.critical("URL %s is not available on the internet.", endpoint)
+            print(f"URL %s is not available on the internet.", external_endpoint)
+            logging.critical("URL %s is not available on the internet.", external_endpoint)
+            raise Exception("URL is not available on the internet.")
 
         self.country_list = {}
 
@@ -72,6 +72,8 @@ class ExternalReader(Reader):
                         precision=line['precision'],
                         height=line['height'],
                         station=line['station'],
+                        station_id=line['stationid'],
+                        logo_id=line['logoid'],
                         country_id=country
                     )
                     self.transmitter_list.append(transmitter)
@@ -84,7 +86,7 @@ class ExternalReader(Reader):
 
         :return: None.
         """
-        response = req.get(self.endpoint + "/countries/")
+        response = self.api_caller.get_countries()
         for country in response.json():
             if country["country_code"] is not None and country["country_code"] not in self.country_list:
                 self.country_list[country["country_code"]] = country["is_enabled"]
@@ -109,11 +111,12 @@ class ExternalReader(Reader):
                 try:
                     logging.info("Downloading data for country %s", country)
                     headers = {'user-agent': 'SignalMap Updater 1.0'}
-                    request = requests.get(get_api_address(country), headers=headers)
+                    request = req.get(get_api_address(country), headers=headers)
+                    # data = request.content.decode('utf-8').split('\r\n')
                     data = request.content.decode('utf-8', errors='ignore').strip().split('\r\n')
                     self._import_country_data(data, country)
-                except Exception:
-                    logging.error("Error while downloading data for country %s", country)
+                except Exception as e:
+                    logging.error("Error while downloading data for country %s: %s", country, e)
                     raise Exception("Error while downloading data for country " + country)
 
 

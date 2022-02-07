@@ -2,7 +2,6 @@ import os
 import time
 import logging
 from functools import partial
-from multiprocessing.pool import ThreadPool
 from time import sleep
 from multiprocessing import Pool, cpu_count
 
@@ -14,6 +13,7 @@ import requests as req
 from json import dumps
 
 from models.country import Country, CountryCompare
+from .apicaller import InternalAPICaller
 from .antennafilegenerator import get_antenna_file
 from .locationfilegenerator import get_location_file
 from models import Transmitter
@@ -148,10 +148,11 @@ def generate_transmitter(unit: Transmitter):
     delete_files(location_filename, unit.station)
 
 
-def create_transmitter(unit: Transmitter):
+def create_transmitter(api_caller: InternalAPICaller, unit: Transmitter):
     generate_transmitter(unit)
     json_transmitter = convert_transmitter_obj_to_json(unit)
-    res = req.post("http://localhost/api/v1/transmitters/create/", json_transmitter)
+    # res = req.post("http://localhost/api/v1/transmitters/create/", json_transmitter)
+    res = api_caller.create_transmitter(json_transmitter)
     if res.status_code == 200:
         logging.info(f"Transmitter {unit.external_id} created.")
         print("Transmitter created successfully")
@@ -160,11 +161,12 @@ def create_transmitter(unit: Transmitter):
         print("Transmitter not created")
 
 
-def update_transmitter(unit: Transmitter):
+def update_transmitter(api_caller: InternalAPICaller, unit: Transmitter):
     generate_transmitter(unit)
     json_transmitter = convert_transmitter_obj_to_json(unit)
-    res = req.post(f"http://localhost/api/v1/transmitters/update/?band={unit.band}&external_id={unit.external_id}",
-                   json_transmitter)
+    # res = req.post(f"http://localhost/api/v1/transmitters/update/?band={unit.band}&external_id={unit.external_id}",
+                   # json_transmitter)
+    res = api_caller.update_transmitter(unit.band, unit.external_id, json_transmitter)
     if res.status_code == 200:
         logging.info(f"Transmitter {unit.external_id} updated.")
         print("Transmitter updated successfully")
@@ -174,20 +176,21 @@ def update_transmitter(unit: Transmitter):
 
 
 # multiprocessing friendly version of update_transmitters
-def update_transmitters_multi(endpoint: str, unit: Transmitter):
-    response = req.get(
-        f"{endpoint}/transmitters/get/external/?band={str(unit.band)}&external_id={str(unit.external_id)}")
+def update_transmitters_multi(api_caller: InternalAPICaller, unit: Transmitter):
+    # response = req.get(
+    #     f"{endpoint}/transmitters/get/external/?band={str(unit.band)}&external_id={str(unit.external_id)}")
+    response = api_caller.get_transmitter_by_external_id(unit.band, unit.external_id)
     print("ZAPYTANIE:" + str(response) + " " + str(response.text))
     if response.text == "null":
         try:
-            create_transmitter(unit)
+            create_transmitter(api_caller, unit)
         except Exception as e:
             logging.error(e)
             print(e)
     else:
         if os.getenv('REGENERATE_MAPS') == 'True':
             try:
-                update_transmitter(unit)
+                update_transmitter(api_caller, unit)
             except Exception as e:
                 logging.error(e)
                 print(e)
@@ -217,7 +220,7 @@ def update_transmitters_multi(endpoint: str, unit: Transmitter):
             if unit != transmitter_from_internal_source:
                 print(unit.__dict__.items() ^ transmitter_from_internal_source.__dict__.items())
                 try:
-                    update_transmitter(unit)
+                    update_transmitter(api_caller, unit)
                 except Exception as e:
                     print(e)
                     logging.error(e)
@@ -237,7 +240,9 @@ class DBUpdater:
         try:
             req.get(endpoint)
             self.endpoint = endpoint
-        except req.ConnectionError:
+            self.api_caller = InternalAPICaller()
+            self.api_caller.set_url(os.getenv('INTERNAL_API_ADDRESS'))
+        except Exception as e:
             logging.error("Connection error")
             print(f"URL %s is not available on the internet.", endpoint)
 
@@ -258,7 +263,7 @@ class DBUpdater:
         """
         self.update_countries()
         if os.getenv('MULTIPROCESSING') == 'True':
-            func = partial(update_transmitters_multi, self.endpoint)
+            func = partial(update_transmitters_multi, self.api_caller)
             self.pool.map(func, self.transmitter_list)
             self.pool.close()
             self.pool.join()
@@ -273,7 +278,8 @@ class DBUpdater:
         :return: None.
         """
         temp_internal_country_list: dict[str, CountryCompare] = {}
-        signalmap_country_response = req.get(f"{self.endpoint}/countries/").json()
+        # signalmap_country_response = req.get(f"{self.endpoint}/countries/").json()
+        signalmap_country_response = self.api_caller.get_countries().json()
         for country in signalmap_country_response:
             c: CountryCompare = CountryCompare(
                 country_code=country["country_code"],
@@ -291,13 +297,16 @@ class DBUpdater:
         if len(temp_external_country_list) != len(temp_internal_country_list):
             for country in temp_internal_country_list.values():
                 if country not in temp_external_country_list.values():
-                    req.delete(f"{self.endpoint}/countries/delete/{country.country_code}")
+                    # req.delete(f"{self.endpoint}/countries/delete/{country.country_code}")
+                    self.api_caller.delete_country(country.country_code)
             for country in temp_external_country_list.values():
                 if country not in temp_internal_country_list.values():
                     c: Country = Country(country_code=country.country_code,
                                          country_name=country.country_name,
                                          is_enabled="True" == os.getenv("UPDATE_COUNTRIES"))
-                    req.post(f"{self.endpoint}/countries/create/", data=convert_country_obj_to_json(c))
+                    # req.post(f"{self.endpoint}/countries/create/", data=convert_country_obj_to_json(c))
+                    c_json = convert_country_obj_to_json(c)
+                    self.api_caller.create_country(c_json)
                 # if country not in temp_internal_country_list:
                 #     c: Country = Country(country_code=country_code, country_name=country.country_name)
                 #     data = convert_country_obj_to_json(c)
@@ -308,8 +317,9 @@ class DBUpdater:
     def update_transmitters(self):
         for unit in self.transmitter_list:
             sleep(0.1)
-            response = req.get(
-                f"{self.endpoint}/transmitters/get/external/?band={str(unit.band)}&external_id={str(unit.external_id)}")
+            # response = req.get(
+            #     f"{self.endpoint}/transmitters/get/external/?band={str(unit.band)}&external_id={str(unit.external_id)}")
+            response = self.api_caller.get_transmitter_by_external_id(unit.band, unit.external_id)
             print("ZAPYTANIE:" + str(response) + " " + str(response.text))
             if response.text == "null":
                 try:

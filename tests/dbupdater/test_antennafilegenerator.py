@@ -46,6 +46,7 @@ class MyTestCase(unittest.TestCase):
             self.assertEqual(lines[0], '0.0\n')
             self.assertEqual(lines[1], '0   38.2\n')
             self.assertEqual(lines[10], '10   38.0\n')
+        delete_file(f"./{location_filename}.az")
 
     def assertIsFile(self, path):
         if not pl.Path(path).resolve().is_file():

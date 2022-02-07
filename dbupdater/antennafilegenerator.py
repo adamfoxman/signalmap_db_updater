@@ -1,6 +1,7 @@
 from textwrap import wrap
 from math import ceil, sqrt
 import re
+import logging
 
 
 def get_antenna_file(path: str,
@@ -81,7 +82,9 @@ def split_string_to_list(pattern) -> (float, list):
     if pattern == "":
         return 0, None
     else:
-        pattern = wrap(pattern, 5)
+        # pattern = wrap(pattern, 5)
+        pattern = re.findall('.....', pattern)
+        logging.debug(f"Pattern: {pattern}")
         for line, string in enumerate(pattern):
             pattern[line] = float(string)
         max_value = max(pattern)
